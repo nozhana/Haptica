@@ -14,7 +14,16 @@ struct PatternLibrary: View {
         NavigationStack {
             Group {
                 if model.recordedPatterns.isEmpty {
-                    ContentUnavailableView("You have no patterns yet. Try recording one.", systemImage: "waveform.slash")
+                    VStack {
+                        Image(systemName: "waveform.slash")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 64, height: 64)
+                            .imageScale(.large)
+                        
+                        Text("You have no patterns yet. Try recording one.")
+                            .font(.title)
+                    }
                 } else {
                     SelectableList(values: $model.recordedPatterns) { url in
                         model.loadRecording(url)

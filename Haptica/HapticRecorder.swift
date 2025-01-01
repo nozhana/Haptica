@@ -77,8 +77,7 @@ struct HapticRecorder: View {
                     .frame(width: 44, height: 44)
                     .imageScale(.large)
                     .foregroundStyle(.red)
-                    .contentTransition(.symbolEffect)
-                    .transition(.symbolEffect)
+                    .transition(.scale.combined(with: .opacity))
                     .animation(.smooth, value: model.mode)
             } // Button/label
             .buttonStyle(.plain)
@@ -101,8 +100,7 @@ struct HapticRecorder: View {
                     .frame(width: 44, height: 44)
                     .imageScale(.large)
                     .foregroundStyle(.blue)
-                    .contentTransition(.symbolEffect)
-                    .transition(.symbolEffect)
+                    .transition(.scale.combined(with: .opacity))
                     .animation(.smooth, value: model.mode)
             } // Button/label
             .buttonStyle(.plain)
@@ -121,7 +119,7 @@ struct HapticRecorder: View {
                     .frame(width: 44, height: 44)
                     .imageScale(.large)
                     .foregroundStyle(.red)
-                    .transition(.symbolEffect)
+                    .transition(.scale.combined(with: .opacity))
             }
         }
     }
@@ -136,7 +134,7 @@ struct HapticRecorder: View {
                 .frame(width: 44, height: 44)
                 .imageScale(.large)
                 .foregroundStyle(.teal)
-                .transition(.symbolEffect)
+                .transition(.scale.combined(with: .opacity))
         }
 
     }
