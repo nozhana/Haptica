@@ -99,7 +99,7 @@ struct HapticRecorder: View {
                     .scaledToFit()
                     .frame(width: 44, height: 44)
                     .imageScale(.large)
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.accent)
                     .transition(.scale.combined(with: .opacity))
                     .animation(.smooth, value: model.mode)
             } // Button/label
@@ -133,10 +133,9 @@ struct HapticRecorder: View {
                 .scaledToFit()
                 .frame(width: 44, height: 44)
                 .imageScale(.large)
-                .foregroundStyle(.teal)
+                .foregroundStyle(.accent)
                 .transition(.scale.combined(with: .opacity))
         }
-
     }
     
     @ViewBuilder

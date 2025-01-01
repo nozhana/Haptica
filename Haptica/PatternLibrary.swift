@@ -12,7 +12,18 @@ struct PatternLibrary: View {
     
     var body: some View {
         NavigationStack {
-            Group {
+            List {
+                let brush = Bundle.main.url(forResource: "Brush", withExtension: "ahap")
+                let knock = Bundle.main.url(forResource: "Knock", withExtension: "ahap")
+                let rumble = Bundle.main.url(forResource: "Rumble", withExtension: "ahap")
+                let slide = Bundle.main.url(forResource: "Slide", withExtension: "ahap")
+                
+                SelectableList(values: .constant([brush, knock, rumble, slide].compactMap(\.self)), isSection: true, sectionHeader: "Preset patterns") { url in
+                    model.loadRecording(url)
+                } label: { url in
+                    Label(url.lastPathComponent, systemImage: "waveform")
+                }
+
                 if model.recordedPatterns.isEmpty {
                     VStack {
                         Image(systemName: "waveform.slash")
@@ -21,11 +32,14 @@ struct PatternLibrary: View {
                             .frame(width: 64, height: 64)
                             .imageScale(.large)
                         
-                        Text("You have no patterns yet. Try recording one.")
-                            .font(.title)
+                        Text("You have no patterns yet.\nTry recording one.")
+                            .font(.title2.bold())
+                            .multilineTextAlignment(.center)
                     }
+                    .frame(maxWidth: .infinity)
+                    .listRowBackground(Color.clear)
                 } else {
-                    SelectableList(values: $model.recordedPatterns) { url in
+                    SelectableList(values: $model.recordedPatterns, isSection: true, sectionHeader: "Recorded patterns") { url in
                         model.loadRecording(url)
                     } onDeleted: { url in
                         Task { @MainActor in
@@ -41,7 +55,7 @@ struct PatternLibrary: View {
                         Label(url.lastPathComponent, systemImage: "waveform")
                     }
                 } // if/else
-            } // Group
+            } // List
             .onAppear(perform: model.populateRecordedPatterns)
             .navigationTitle("Pattern Library")
         } // NavigationStack
