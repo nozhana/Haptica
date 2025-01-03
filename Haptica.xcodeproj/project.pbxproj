@@ -6,13 +6,30 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		319CFEE32D2816AF004835CF /* ToastKit in Frameworks */ = {isa = PBXBuildFile; productRef = 319CFEE22D2816AF004835CF /* ToastKit */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		31F412D22D24044A0015198B /* Haptica.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Haptica.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		31FC75A92D25F9DB004F783C /* Exceptions for "Haptica" folder in "Haptica" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 31F412D12D24044A0015198B /* Haptica */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		31F412D42D24044A0015198B /* Haptica */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				31FC75A92D25F9DB004F783C /* Exceptions for "Haptica" folder in "Haptica" target */,
+			);
 			path = Haptica;
 			sourceTree = "<group>";
 		};
@@ -23,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				319CFEE32D2816AF004835CF /* ToastKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +83,7 @@
 			);
 			name = Haptica;
 			packageProductDependencies = (
+				319CFEE22D2816AF004835CF /* ToastKit */,
 			);
 			productName = Haptica;
 			productReference = 31F412D22D24044A0015198B /* Haptica.app */;
@@ -94,6 +113,9 @@
 			);
 			mainGroup = 31F412C92D24044A0015198B;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				319CFEE12D2816AF004835CF /* XCRemoteSwiftPackageReference "toastkit" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 31F412D32D24044A0015198B /* Products */;
 			projectDirPath = "";
@@ -255,7 +277,9 @@
 				DEVELOPMENT_TEAM = K79BRFXPP9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Haptica/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Haptica;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This is used to find your friends and sync haptic patterns.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -287,7 +311,9 @@
 				DEVELOPMENT_TEAM = K79BRFXPP9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Haptica/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Haptica;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This is used to find your friends and sync haptic patterns.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -330,6 +356,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		319CFEE12D2816AF004835CF /* XCRemoteSwiftPackageReference "toastkit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/nozhana/toastkit";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		319CFEE22D2816AF004835CF /* ToastKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 319CFEE12D2816AF004835CF /* XCRemoteSwiftPackageReference "toastkit" */;
+			productName = ToastKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 31F412CA2D24044A0015198B /* Project object */;
 }

@@ -8,9 +8,11 @@
 import CoreHaptics
 import Combine
 import SwiftUI
+import class MultipeerConnectivity.MCPeerID
 
 struct HapticRecorder: View {
     @StateObject private var model = Observed()
+    @StateObject private var connectivity = ConnectivityManager()
     
     private func locationUnit(for point: CGPoint, in size: CGSize) -> UnitPoint {
         .init(x: point.x / size.width, y: point.y / size.height)
@@ -155,6 +157,50 @@ struct HapticRecorder: View {
         }
     }
     
+    private var networkButton: some View {
+        Button {
+            model.isShowingPeers = true
+        } label: {
+            Image(systemName: connectivity.isConnected ? "wifi" : "wifi.slash")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 24, height: 24)
+                .foregroundStyle(.black)
+                .frame(width: 44, height: 44)
+                .background(connectivity.isConnected ? .green : .accent)
+                .clipShape(.circle)
+        }
+    }
+    
+    @ViewBuilder
+    private var disconnectButton: some View {
+        if connectivity.isConnected {
+            Button {
+                connectivity.disconnectSession()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 24, height: 24)
+                    .foregroundStyle(.black)
+                    .frame(width: 44, height: 44)
+                    .background(.red)
+                    .clipShape(.circle)
+            }
+            .transition(.scale.combined(with: .opacity))
+        }
+    }
+    
+    @ViewBuilder
+    private var peerInfo: some View {
+        if let peer = connectivity.connectedPeers.first {
+            Label(peer.displayName, systemImage: "wifi.circle.fill")
+                .font(.caption.monospaced().bold())
+                .foregroundStyle(.green)
+                .transition(.move(edge: .trailing))
+        }
+    }
+    
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .bottom) {
@@ -162,8 +208,11 @@ struct HapticRecorder: View {
                     .background(.black)
                 
                 VStack {
-                    caption
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    HStack {
+                        caption
+                        Spacer()
+                        peerInfo
+                    } // HStack
                     
                     HStack(spacing: 16) {
                         recordButton
@@ -175,6 +224,10 @@ struct HapticRecorder: View {
                         .transition(.scale.combined(with: .opacity))
                         
                         showRecordingsButton
+                        
+                        networkButton
+                        
+                        disconnectButton
                     } // HStack
                 } // VStack
                 .padding(.horizontal, 16)
@@ -186,6 +239,39 @@ struct HapticRecorder: View {
             PatternLibrary()
                 .environmentObject(model)
         }
+        .sheet(isPresented: $model.isShowingPeers) {
+            FoundPeers()
+                .environmentObject(connectivity)
+        }
+        .onChange(of: connectivity.isConnected) { newValue in
+            if newValue, let peer = connectivity.connectedPeers.first {
+                model.mode = .streaming(peer)
+            } else {
+                model.mode = .idle
+            }
+        }
+        .onAppear {
+            model.registerSendItemsCallback(connectivity.send)
+            connectivity.on(Observed.TouchItem.self) { touchItem, _ in
+                Task { @MainActor in
+                    model.touchItems = (model.touchItems + [touchItem]).duplicatesRemoved.sorted(using: KeyPathComparator(\.creationDate))
+                    Haptic.shared.play(.tick(intensity: touchItem.locationUnit.x, sharpness: 1 - touchItem.locationUnit.y))
+                }
+            }
+            connectivity.on([Observed.TouchItem].self) { touchItems, _ in
+                Task { @MainActor in
+                    model.touchItems = (model.touchItems + touchItems).duplicatesRemoved.sorted(using: KeyPathComparator(\.creationDate))
+                    
+                    let baseCreationDate = touchItems.map(\.creationDate).min() ?? .now
+                    
+                    let ticks = touchItems
+                        .sorted(using: KeyPathComparator(\.creationDate))
+                        .map { Haptic.Tick(intensity: $0.locationUnit.x, sharpness: 1 - $0.locationUnit.y, relativeTime: $0.creationDate.timeIntervalSinceReferenceDate - baseCreationDate.timeIntervalSinceReferenceDate) }
+                    
+                    Haptic.shared.play(.ticks(ticks: ticks))
+                }
+            }
+        }
     }
 }
 
@@ -193,9 +279,28 @@ struct HapticRecorder: View {
     HapticRecorder()
 }
 
+extension UnitPoint: Codable {
+    enum CodingKeys: String, CodingKey {
+        case x, y
+    }
+    
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let x = try container.decode(CGFloat.self, forKey: .x)
+        let y = try container.decode(CGFloat.self, forKey: .y)
+        self.init(x: x, y: y)
+    }
+    
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(x, forKey: .x)
+        try container.encode(y, forKey: .y)
+    }
+}
+
 extension HapticRecorder {
     final class Observed: ObservableObject {
-        struct TouchItem: Identifiable, Hashable {
+        struct TouchItem: Identifiable, Hashable, Codable {
             let locationUnit: UnitPoint
             let creationDate: Date
             let time: TimeInterval
@@ -208,19 +313,15 @@ extension HapticRecorder {
             case recording(startDate: Date)
             case readyForPlayback(url: URL)
             case playbackInProgress(url: URL)
+            case streaming(MCPeerID)
             case loading
         }
         
-        enum DropState {
-            case idle
-            case valid
-            case invalid
-        }
-        
-        @Published private(set) var touchItems: [TouchItem] = []
-        @Published private(set) var mode = ViewMode.idle
+        @Published var touchItems: [TouchItem] = []
+        @Published var mode = ViewMode.idle
         @Published var recordedPatterns: [URL] = []
         @Published var isShowingRecordings = false
+        @Published var isShowingPeers = false
         
         var isIdle: Bool {
             mode == .idle
@@ -250,6 +351,13 @@ extension HapticRecorder {
             default: false
             }
         }
+        
+        var isStreaming: Bool {
+            switch mode {
+            case .streaming: true
+            default: false
+            }
+        }
 
         private(set) var recordedTouchItems: [TouchItem] = []
         
@@ -259,10 +367,23 @@ extension HapticRecorder {
         
         private var recordingSubscriber: AnyCancellable?
         
+        private var sendItemsNextDate = Date.now
+        private var itemBuffer: [TouchItem] = []
+        private var sendItems: (([TouchItem]) -> Void)?
+        
+        func registerSendItemsCallback(_ callback: @escaping ([TouchItem]) -> Void) {
+            sendItems = callback
+        }
+        
         func registerTouch(locationUnit: UnitPoint, date: Date) {
-            guard isIdle || isRecording || isReadyForPlayback else { return }
+            guard isIdle || isRecording || isReadyForPlayback || isStreaming else { return }
             let touch = TouchItem(locationUnit: locationUnit, creationDate: date, time: runningTime)
             touchItems.append(touch)
+            if isStreaming {
+                let delayedTouch = TouchItem(locationUnit: locationUnit, creationDate: date + 0.02, time: runningTime + 0.02)
+                itemBuffer.append(delayedTouch)
+                itemBuffer.removeDuplicates()
+            }
             Haptic.shared.play(.tick(intensity: locationUnit.x, sharpness: 1 - locationUnit.y))
         }
         
@@ -274,6 +395,15 @@ extension HapticRecorder {
             } else {
                 touchItems = touchItems.filter {
                     $0.creationDate.timeIntervalSinceReferenceDate > date.timeIntervalSinceReferenceDate - 1
+                }
+            }
+            
+            if date >= sendItemsNextDate, !itemBuffer.isEmpty {
+                sendItemsNextDate = date + 0.02
+                Task(priority: .utility) {
+                    let buffer = itemBuffer
+                    itemBuffer.removeAll()
+                    sendItems?(buffer)
                 }
             }
         }

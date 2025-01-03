@@ -222,6 +222,28 @@ final class Haptic {
         }
     }
     
+    private func playTicksHaptic(ticks: [Tick]) {
+        guard let engine else { return }
+        try? engine.start()
+        
+        var events = [CHHapticEvent]()
+        
+        ticks.forEach { tick in
+            let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: Float(tick.intensity).clamped(to: 0...1))
+            let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: Float(tick.sharpness).clamped(to: 0...1))
+            let event = CHHapticEvent(eventType: .hapticTransient, parameters: [intensity, sharpness], relativeTime: tick.relativeTime)
+            events.append(event)
+        }
+        
+        do {
+            let pattern = try CHHapticPattern(events: events, parameters: [])
+            self.player = try engine.makePlayer(with: pattern)
+            try player!.start(atTime: CHHapticTimeImmediate)
+        } catch {
+            print("Failed to play ticks haptic: \(error.localizedDescription)")
+        }
+    }
+    
     private func playHapticFromFile(url: URL) {
         guard let engine else { return }
         try? engine.start()
@@ -260,6 +282,8 @@ final class Haptic {
             playLevelChangeHaptic(level: level)
         case .tick(let intensity, let sharpness):
             playTickHaptic(intensity: intensity, sharpness: sharpness)
+        case .ticks(let ticks):
+            playTicksHaptic(ticks: ticks)
         case .file(let url):
             playHapticFromFile(url: url)
         }
@@ -275,6 +299,7 @@ extension Haptic {
         case rollAway(magnitude: Double = 1, duration: TimeInterval = 1.5)
         case levelChange(level: Double = 0.5)
         case tick(intensity: Double, sharpness: Double)
+        case ticks(ticks: [Tick])
         case file(url: URL)
     }
 }
@@ -296,4 +321,12 @@ extension URL {
         
         return url
     }()
+}
+
+extension Haptic {
+    struct Tick {
+        let intensity: Double
+        let sharpness: Double
+        let relativeTime: TimeInterval
+    }
 }
